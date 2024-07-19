@@ -75,4 +75,15 @@ export class PdfService {
 			}
 		});
 	}
+
+	async deleteAllDocuments(): Promise<any> {
+		return this.esClient.deleteByQuery({
+			index: 'pdf_index',
+			body: {
+				query: {
+					match_all: {}
+				}
+			}
+		});
+	}
 }

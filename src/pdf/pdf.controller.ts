@@ -1,4 +1,14 @@
-import { Controller, Post, Get, Body, UploadedFile, UseInterceptors } from '@nestjs/common';
+import {
+	Controller,
+	Post,
+	Get,
+	Body,
+	UploadedFile,
+	UseInterceptors,
+	Delete,
+	HttpException,
+	HttpStatus
+} from '@nestjs/common';
 import { PdfService } from './pdf.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -18,23 +28,33 @@ export class PdfController {
 						.fill(null)
 						.map(() => Math.round(Math.random() * 16).toString(16))
 						.join('');
-					cb(null, `${randomName}${extname(file.originalname)}`);
+					const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+					cb(null, `${randomName}${extname(originalName)}`);
 				}
 			})
 		})
 	)
 	async uploadPdf(@UploadedFile() file: Express.Multer.File) {
-		const title = file.originalname;
-		return this.pdfService.indexPdf(file.path, title);
+		if (!file) throw new HttpException('No file uploaded', HttpStatus.BAD_REQUEST);
+
+		const title = Buffer.from(file.originalname, 'latin1').toString('utf8');
+		console.log(title);
+		return await this.pdfService.indexPdf(file.path, title);
 	}
 
 	@Post('search')
 	async searchPdf(@Body('query') query: string) {
+		if (!query) throw new HttpException('Query must be provided', HttpStatus.BAD_REQUEST);
 		return this.pdfService.searchPdf(query);
 	}
 
 	@Get('all')
 	async getAllIndexedPdfs() {
 		return this.pdfService.getAllIndexedPdfs();
+	}
+
+	@Delete('delete-all')
+	async deleteAllDocuments() {
+		return this.pdfService.deleteAllDocuments();
 	}
 }
