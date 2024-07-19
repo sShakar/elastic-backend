@@ -13,7 +13,7 @@ yarn-error.log*
 lerna-debug.log*
 
 # Folders
-uploads
+/uploads
 
 # OS
 .DS_Store
