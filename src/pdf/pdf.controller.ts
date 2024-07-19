@@ -28,8 +28,13 @@ export class PdfController {
 		return this.pdfService.indexPdf(file.path, title);
 	}
 
-	@Get('search')
+	@Post('search')
 	async searchPdf(@Body('query') query: string) {
 		return this.pdfService.searchPdf(query);
+	}
+
+	@Get('all')
+	async getAllIndexedPdfs() {
+		return this.pdfService.getAllIndexedPdfs();
 	}
 }

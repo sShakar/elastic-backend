@@ -1,15 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { Client } from '@elastic/elasticsearch';
-import pdfParse from 'pdf-parse';
+import * as pdfParse from 'pdf-parse';
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
+import * as process from 'node:process';
 
 @Injectable()
 export class PdfService {
 	private readonly esClient: Client;
 
 	constructor() {
-		this.esClient = new Client({ node: 'http://localhost:9200' });
+		this.esClient = new Client({
+			node: process.env.ELASTIC_SEARCH_ENDPOINT,
+			cloud: {
+				id: process.env.ELASTIC_CLOUD_ID
+			},
+			auth: {
+				apiKey: {
+					id: process.env.ELASTIC_API_KEY_ID,
+					api_key: process.env.ELASTIC_API_KEY
+				}
+			}
+		});
 	}
 
 	async extractText(filePath: string): Promise<string> {
@@ -43,6 +55,22 @@ export class PdfService {
 					match: {
 						content: query
 					}
+				},
+				highlight: {
+					fields: {
+						content: {}
+					}
+				}
+			}
+		});
+	}
+
+	async getAllIndexedPdfs(): Promise<any> {
+		return this.esClient.search({
+			index: 'pdf_index',
+			body: {
+				query: {
+					match_all: {}
 				}
 			}
 		});
