@@ -37,7 +37,7 @@ export class PdfService {
 			id,
 			title,
 			content,
-			fileName: filePath,
+			filename: filePath,
 			uploadDate: new Date()
 		};
 		return this.esClient.index({
@@ -51,6 +51,7 @@ export class PdfService {
 		return this.esClient.search({
 			index: 'pdf_index',
 			body: {
+				size: 100,
 				query: {
 					match: {
 						content: query
@@ -69,6 +70,7 @@ export class PdfService {
 		return this.esClient.search({
 			index: 'pdf_index',
 			body: {
+				size: 100,
 				query: {
 					match_all: {}
 				}

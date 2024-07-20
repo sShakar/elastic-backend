@@ -38,7 +38,6 @@ export class PdfController {
 		if (!file) throw new HttpException('No file uploaded', HttpStatus.BAD_REQUEST);
 
 		const title = Buffer.from(file.originalname, 'latin1').toString('utf8');
-		console.log(title);
 		return await this.pdfService.indexPdf(file.path, title);
 	}
 
