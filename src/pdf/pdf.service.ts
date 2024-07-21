@@ -1,20 +1,18 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
 import { Client } from '@elastic/elasticsearch';
+import { lastValueFrom } from 'rxjs';
 import * as pdfParse from 'pdf-parse';
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import * as process from 'node:process';
+import * as FormData from 'form-data';
 import * as path from 'node:path';
-import { promisify } from 'util';
-import { execFile } from 'child_process';
-
-const execFileAsync = promisify(execFile);
 
 @Injectable()
 export class PdfService {
 	private readonly esClient: Client;
-
-	constructor() {
+	constructor(private httpService: HttpService) {
 		this.esClient = new Client({
 			node: process.env.ELASTIC_SEARCH_ENDPOINT,
 			cloud: {
@@ -72,11 +70,20 @@ export class PdfService {
 	}
 
 	async extractTableFromPdf(pdfPath: string): Promise<any> {
-		const scriptPath = path.join(__dirname, '../../scripts/extract_table.py');
+		const filePath = path.resolve(pdfPath);
+		const fileStream = fs.createReadStream(filePath);
+		const formData = new FormData();
+		formData.append('file', fileStream);
 		try {
-			const { stdout, stderr } = await execFileAsync('python', [scriptPath, pdfPath]);
-			if (stderr) throw new HttpException(`Error extracting table: ${stderr}`, HttpStatus.INTERNAL_SERVER_ERROR);
-			const parsedArray = JSON.parse(stdout);
+			const response = await lastValueFrom(
+				this.httpService.post('https://elastic-pyscript.onrender.com/extract', formData, {
+					headers: {
+						...formData.getHeaders()
+					}
+				})
+			);
+
+			const parsedArray = response.data;
 			const flatArray = [];
 
 			parsedArray.forEach(page => page.table.forEach(row => flatArray.push(row[12].split('').reverse().join(''))));
