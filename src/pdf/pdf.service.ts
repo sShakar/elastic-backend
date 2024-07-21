@@ -36,7 +36,7 @@ export class PdfService {
 	}
 
 	async indexPdf(filePath: string, title: string): Promise<any> {
-		const content = await this.extractText(filePath);
+		const content = await this.extractTableFromPdf(filePath);
 		const id = uuidv4();
 		const document = {
 			id,
@@ -76,8 +76,12 @@ export class PdfService {
 		try {
 			const { stdout, stderr } = await execFileAsync('python', [scriptPath, pdfPath]);
 			if (stderr) throw new HttpException(`Error extracting table: ${stderr}`, HttpStatus.INTERNAL_SERVER_ERROR);
+			const parsedArray = JSON.parse(stdout);
+			const flatArray = [];
 
-			return JSON.parse(stdout);
+			parsedArray.forEach(page => page.table.forEach(row => flatArray.push(row[12].split('').reverse().join(''))));
+
+			return flatArray;
 		} catch (error) {
 			throw new HttpException(`Failed to extract table: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
