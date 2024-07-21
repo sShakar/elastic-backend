@@ -38,7 +38,9 @@ export class PdfController {
 		if (!file) throw new HttpException('No file uploaded', HttpStatus.BAD_REQUEST);
 
 		const title = Buffer.from(file.originalname, 'latin1').toString('utf8');
-		return await this.pdfService.indexPdf(file.path, title);
+		await this.pdfService.indexPdf(file.path, title);
+
+		return await this.pdfService.extractTableFromPdf(file.path);
 	}
 
 	@Post('search')

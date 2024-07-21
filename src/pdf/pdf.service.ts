@@ -1,9 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Client } from '@elastic/elasticsearch';
 import * as pdfParse from 'pdf-parse';
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import * as process from 'node:process';
+import * as path from 'node:path';
+import { promisify } from 'util';
+import { execFile } from 'child_process';
+
+const execFileAsync = promisify(execFile);
 
 @Injectable()
 export class PdfService {
@@ -64,6 +69,18 @@ export class PdfService {
 				}
 			}
 		});
+	}
+
+	async extractTableFromPdf(pdfPath: string): Promise<any> {
+		const scriptPath = path.join(__dirname, '../../scripts/extract_table.py');
+		try {
+			const { stdout, stderr } = await execFileAsync('python', [scriptPath, pdfPath]);
+			if (stderr) throw new HttpException(`Error extracting table: ${stderr}`, HttpStatus.INTERNAL_SERVER_ERROR);
+
+			return JSON.parse(stdout);
+		} catch (error) {
+			throw new HttpException(`Failed to extract table: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	async getAllIndexedPdfs(): Promise<any> {
